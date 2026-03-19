@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <meta name="theme-color" content="#6366f1">
-    <title>Islamic Routine - Increment/Decrement</title>
+    <title>Self Report </title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -151,6 +151,17 @@
             border: 1px solid rgba(255,255,255,0.2);
         }
 
+        .reminder-permission-btn {
+            background: rgba(255, 255, 255, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -211,6 +222,17 @@
             gap: 4px;
             margin-top: 8px;
         }
+
+        .reminder-badge {
+            background: rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 10px;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
     </style>
 </head>
 <body class="light-mode">
@@ -219,7 +241,12 @@
         <!-- Header -->
         <header class="glass-card rounded-none p-3 sticky top-0 z-40">
             <div class="flex justify-between items-center">
-                <h1 class="text-xl font-bold text-white">Islamic Routine</h1>
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-white">Islamic Routine</h1>
+                    <button id="requestPermissionBtn" class="reminder-permission-btn" title="Enable Reminders">
+                        ⏲
+                    </button>
+                </div>
                 <button id="themeToggle" class="glass-button p-2 rounded-full text-white">
                     <svg id="sunIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
@@ -268,6 +295,11 @@
     <!-- Notification Container -->
     <div id="notificationContainer"></div>
 
+    <!-- Audio Element for Beep Sound -->
+    <audio id="reminderSound" preload="auto" style="display:none">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGG0fPTgjMGHm7A7+OZWBYJ" type="audio/wav">
+    </audio>
+
     <script>
         // ============================================
         // DATA HANDLER
@@ -288,6 +320,10 @@
                         { id: 6, name: 'Exercise', goal: 30, unit: 'mins', link: '', reminders: [] }
                     ];
                     localStorage.setItem('categories', JSON.stringify(defaultCategories));
+                }
+                
+                if (!localStorage.getItem('notificationPermission')) {
+                    localStorage.setItem('notificationPermission', 'default');
                 }
             }
 
@@ -372,16 +408,47 @@
             saveTheme(theme) {
                 localStorage.setItem('theme', theme);
             }
+            
+            getNotificationPermission() {
+                return localStorage.getItem('notificationPermission') || 'default';
+            }
+            
+            setNotificationPermission(permission) {
+                localStorage.setItem('notificationPermission', permission);
+            }
         }
 
         // ============================================
-        // NOTIFICATION SYSTEM
+        // NOTIFICATION SYSTEM - WITH MULTIPLE BEEPS
         // ============================================
         class NotificationSystem {
-            constructor() {
+            constructor(dataHandler) {
+                this.dataHandler = dataHandler;
                 this.hasCapacitor = typeof window.Capacitor !== 'undefined';
-                this.notificationSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGG0fPTgjMGHm7A7+OZWBYJ');
-                this.initializeNotifications();
+                this.notificationSound = document.getElementById('reminderSound');
+                this.checkInterval = null;
+                this.sentReminders = new Set(); // Track sent reminders to avoid duplicates
+                this.beepCount = 3; // Number of beeps per reminder
+                this.beepInterval = 1000; // 1 second between beeps
+                this.initialize();
+                
+                // Store reference for service worker communication
+                window.notificationSystem = this;
+            }
+
+            async initialize() {
+                await this.initializeNotifications();
+                this.startReminderChecker();
+                this.updatePermissionButton();
+                
+                // Listen for messages from service worker
+                if (navigator.serviceWorker) {
+                    navigator.serviceWorker.addEventListener('message', (event) => {
+                        if (event.data.type === 'REMINDER') {
+                            this.handleReminder(event.data.categoryName, event.data.time);
+                        }
+                    });
+                }
             }
 
             async initializeNotifications() {
@@ -389,78 +456,340 @@
                     try {
                         const { LocalNotifications } = window.Capacitor.Plugins;
                         await LocalNotifications.requestPermissions();
+                        this.dataHandler.setNotificationPermission('granted');
                     } catch (error) {
                         console.error('Capacitor notification init failed:', error);
+                        this.dataHandler.setNotificationPermission('denied');
                     }
                 } else if ('Notification' in window) {
-                    await Notification.requestPermission();
+                    const permission = Notification.permission;
+                    this.dataHandler.setNotificationPermission(permission);
                 }
+            }
+
+            async requestPermission() {
+                if (this.hasCapacitor) {
+                    try {
+                        const { LocalNotifications } = window.Capacitor.Plugins;
+                        await LocalNotifications.requestPermissions();
+                        this.dataHandler.setNotificationPermission('granted');
+                        this.showInAppNotification('✅ Reminders Enabled', 'success');
+                    } catch (error) {
+                        console.error('Permission denied:', error);
+                        this.dataHandler.setNotificationPermission('denied');
+                        alert('Please enable notifications in settings');
+                    }
+                } else if ('Notification' in window) {
+                    const permission = await Notification.requestPermission();
+                    this.dataHandler.setNotificationPermission(permission);
+                    
+                    if (permission === 'granted') {
+                        this.showInAppNotification('✅ Reminders Enabled', 'success');
+                    } else {
+                        alert('Please enable notifications in browser settings');
+                    }
+                } else {
+                    alert('Your browser does not support notifications');
+                }
+                
+                this.updatePermissionButton();
+            }
+
+            updatePermissionButton() {
+                const btn = document.getElementById('requestPermissionBtn');
+                if (!btn) return;
+                
+                const permission = this.dataHandler.getNotificationPermission();
+                
+                if (permission === 'granted') {
+                    btn.innerHTML = '🔔 Enabled';
+                    btn.style.background = 'rgba(16, 185, 129, 0.3)';
+                } else {
+                    btn.innerHTML = '🔔 Enable';
+                    btn.style.background = 'rgba(255, 255, 255, 0.25)';
+                }
+            }
+
+            startReminderChecker() {
+                // Check every 30 seconds for reminders (more frequent)
+                this.checkInterval = setInterval(() => {
+                    this.checkReminders();
+                }, 30000); // 30 seconds
+                
+                // Also check immediately
+                setTimeout(() => this.checkReminders(), 2000);
+            }
+
+            checkReminders() {
+                const categories = this.dataHandler.getCategories();
+                const now = new Date();
+                const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                const today = this.dataHandler.formatDate(now);
+                
+                categories.forEach(category => {
+                    if (category.reminders && category.reminders.length > 0) {
+                        category.reminders.forEach(time => {
+                            // Check if it's time for this reminder
+                            if (time === currentTime) {
+                                const reminderKey = `${category.id}_${time}_${today}`;
+                                
+                                // Check if we already sent this reminder today
+                                if (!this.sentReminders.has(reminderKey)) {
+                                    this.handleReminder(category.name, time);
+                                    this.sentReminders.add(reminderKey);
+                                    
+                                    // Clear from set after 24 hours
+                                    setTimeout(() => {
+                                        this.sentReminders.delete(reminderKey);
+                                    }, 24 * 60 * 60 * 1000);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            handleReminder(categoryName, time) {
+                const message = `Time for ${categoryName} (${time})`;
+                
+                // Send to service worker for background execution
+                this.sendToServiceWorker(categoryName, time);
+                
+                // Show notification
+                this.sendBrowserNotification('Islamic Routine Reminder', message);
+                
+                // Play multiple beeps
+                this.playMultipleBeeps();
+                
+                // Show in-app notification
+                this.showInAppNotification(`🔔 ${message}`, 'reminder');
+            }
+
+            playMultipleBeeps() {
+                let beepCount = 0;
+                
+                const playBeep = () => {
+                    if (beepCount < this.beepCount) {
+                        try {
+                            this.notificationSound.currentTime = 0;
+                            this.notificationSound.play().catch(e => {
+                                console.log('Audio play failed:', e);
+                                // Fallback: use Web Audio API
+                                this.playFallbackBeep();
+                            });
+                        } catch (e) {
+                            this.playFallbackBeep();
+                        }
+                        beepCount++;
+                        setTimeout(playBeep, this.beepInterval);
+                    }
+                };
+                
+                playBeep();
+            }
+
+            playFallbackBeep() {
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // 880 Hz = A5
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.2);
+                } catch (e) {
+                    console.log('Fallback beep failed:', e);
+                }
+            }
+
+            sendToServiceWorker(categoryName, time) {
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'PLAY_REMINDER',
+                        categoryName: categoryName,
+                        time: time,
+                        beepCount: this.beepCount,
+                        beepInterval: this.beepInterval
+                    });
+                }
+            }
+
+            sendBrowserNotification(title, body) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    try {
+                        const notification = new Notification(title, {
+                            body: body,
+                            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%2310b981"/></svg>',
+                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%2310b981"/></svg>',
+                            tag: 'islamic-reminder',
+                            renotify: true,
+                            silent: false,
+                            vibrate: [200, 100, 200, 100, 200] // Vibrate pattern for mobile
+                        });
+                        
+                        notification.onclick = () => {
+                            window.focus();
+                            notification.close();
+                        };
+                    } catch (e) {
+                        console.error('Notification error:', e);
+                        this.playMultipleBeeps();
+                    }
+                }
+            }
+
+            showInAppNotification(message, type = 'reminder') {
+                const container = document.getElementById('notificationContainer');
+                const notification = document.createElement('div');
+                
+                let bgColor = 'rgba(16, 185, 129, 0.9)'; // green for success
+                if (type === 'reminder') {
+                    bgColor = 'rgba(239, 68, 68, 0.9)'; // red for reminder
+                }
+                
+                notification.className = 'update-notification';
+                notification.style.background = bgColor;
+                notification.innerHTML = message;
+                
+                container.innerHTML = '';
+                container.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 5000);
             }
 
             async scheduleReminder(categoryName, time, categoryId) {
-                const [hours, minutes] = time.split(':');
-                const notificationTime = new Date();
-                notificationTime.setHours(parseInt(hours), parseInt(minutes), 0);
-
-                if (this.hasCapacitor) {
-                    try {
-                        const { LocalNotifications } = window.Capacitor.Plugins;
-                        await LocalNotifications.schedule({
-                            notifications: [{
-                                id: parseInt(`${categoryId}${hours}${minutes}`),
-                                title: 'Islamic Routine Reminder',
-                                body: `Time for ${categoryName}`,
-                                schedule: {
-                                    at: notificationTime,
-                                    allowWhileIdle: true
-                                },
-                                sound: 'default',
-                                importance: 5,
-                                priority: 2
-                            }]
-                        });
-                    } catch (error) {
-                        console.error('Capacitor notification schedule failed:', error);
-                        this.browserFallback(categoryName);
-                    }
-                } else {
-                    this.browserFallback(categoryName);
-                }
-            }
-
-            browserFallback(categoryName) {
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('Islamic Routine Reminder', {
-                        body: `Time for ${categoryName}`,
-                        icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%2310b981"/></svg>'
-                    });
-                } else {
-                    try {
-                        this.notificationSound.play();
-                    } catch (e) {
-                        console.error('Audio playback failed:', e);
-                    }
-                    alert(`⏰ Reminder: Time for ${categoryName}`);
-                }
+                console.log(`Reminder set for ${categoryName} at ${time}`);
+                this.showInAppNotification(`Reminder set for ${categoryName} at ${time}`, 'success');
+                
+                // Store in localStorage for service worker
+                const reminders = JSON.parse(localStorage.getItem('scheduledReminders') || '[]');
+                reminders.push({
+                    id: `${categoryId}_${time}`,
+                    categoryName: categoryName,
+                    time: time,
+                    categoryId: categoryId,
+                    active: true
+                });
+                localStorage.setItem('scheduledReminders', JSON.stringify(reminders));
             }
 
             async cancelReminder(categoryId, time) {
-                if (this.hasCapacitor) {
-                    try {
-                        const [hours, minutes] = time.split(':');
-                        const { LocalNotifications } = window.Capacitor.Plugins;
-                        await LocalNotifications.cancel({
-                            notifications: [{ id: parseInt(`${categoryId}${hours}${minutes}`) }]
-                        });
-                    } catch (error) {
-                        console.error('Cancel notification failed:', error);
-                    }
-                }
+                console.log(`Reminder cancelled for category ${categoryId} at ${time}`);
+                
+                // Remove from localStorage
+                const reminders = JSON.parse(localStorage.getItem('scheduledReminders') || '[]');
+                const filtered = reminders.filter(r => r.id !== `${categoryId}_${time}`);
+                localStorage.setItem('scheduledReminders', JSON.stringify(filtered));
+            }
+
+            testReminder() {
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                this.handleReminder('Test', timeStr);
             }
         }
 
         // ============================================
-        // UI RENDERER - With Increment/Decrement Buttons
+        // SERVICE WORKER WITH BACKGROUND AUDIO
+        // ============================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    // Service Worker for background reminders
+                    self.addEventListener('install', (e) => { 
+                        console.log('Service Worker installed');
+                        self.skipWaiting(); 
+                    });
+                    
+                    self.addEventListener('activate', (e) => { 
+                        console.log('Service Worker activated');
+                        return self.clients.claim(); 
+                    });
+                    
+                    self.addEventListener('fetch', (e) => {
+                        e.respondWith(
+                            caches.match(e.request).then(response => response || fetch(e.request))
+                        );
+                    });
+                    
+                    self.addEventListener('notificationclick', (e) => {
+                        e.notification.close();
+                        e.waitUntil(clients.openWindow('/'));
+                    });
+                    
+                    self.addEventListener('message', (e) => {
+                        if (e.data.type === 'PLAY_REMINDER') {
+                            // Play beeps in background
+                            self.registration.showNotification('Islamic Routine Reminder', {
+                                body: \`Time for \${e.data.categoryName} (\${e.data.time})\`,
+                                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%2310b981"/></svg>',
+                                badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%2310b981"/></svg>',
+                                vibrate: [200, 100, 200, 100, 200],
+                                tag: 'islamic-reminder',
+                                renotify: true,
+                                silent: false,
+                                requireInteraction: true
+                            });
+                            
+                            // Also try to play audio in background (if possible)
+                            try {
+                                const audioCtx = new AudioContext();
+                                const oscillator = audioCtx.createOscillator();
+                                const gainNode = audioCtx.createGain();
+                                
+                                oscillator.connect(gainNode);
+                                gainNode.connect(audioCtx.destination);
+                                
+                                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                                
+                                oscillator.start();
+                                oscillator.stop(audioCtx.currentTime + 0.2);
+                            } catch (e) {
+                                console.log('Background audio failed:', e);
+                            }
+                        }
+                    });
+                    
+                    // Periodic check for reminders (every minute)
+                    self.setInterval(() => {
+                        // This is a simplified version - in production, you'd sync with IndexedDB
+                        console.log('Background check for reminders');
+                    }, 60000);
+                `;
+
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+
+                navigator.serviceWorker.register(swUrl)
+                    .then(reg => {
+                        console.log('Service Worker registered');
+                        
+                        // Listen for messages from service worker
+                        navigator.serviceWorker.addEventListener('message', (event) => {
+                            if (window.notificationSystem) {
+                                window.notificationSystem.showInAppNotification(
+                                    `Background: ${event.data.message}`, 
+                                    'reminder'
+                                );
+                            }
+                        });
+                    })
+                    .catch(err => console.log('SW failed:', err));
+            });
+        }
+
+        // ============================================
+        // UI RENDERER
         // ============================================
         class UIRenderer {
             constructor(dataHandler, notificationSystem) {
@@ -503,6 +832,10 @@
                     this.dataHandler.saveTheme(newTheme);
                     document.body.className = newTheme === 'dark' ? 'dark-mode' : 'light-mode';
                     this.updateThemeIcon(newTheme);
+                });
+
+                document.getElementById('requestPermissionBtn')?.addEventListener('click', () => {
+                    this.notificationSystem.requestPermission();
                 });
 
                 document.querySelectorAll('.nav-item').forEach(item => {
@@ -561,13 +894,8 @@
             }
 
             updateCategoryValue(categoryId, newValue) {
-                // Save to storage
                 this.dataHandler.saveProgress(this.currentDate, categoryId, newValue);
-                
-                // Update UI
                 this.updateCategoryCard(categoryId, newValue);
-                
-                // Show notification
                 this.showNotification(`Updated: ${newValue}`);
             }
 
@@ -587,12 +915,10 @@
                 const percentage = Math.min((newValue / category.goal) * 100, 100);
                 const isComplete = newValue >= category.goal;
 
-                // Update value display
                 if (valueDisplay) {
                     valueDisplay.textContent = newValue;
                 }
 
-                // Update progress text
                 if (progressText) {
                     progressText.textContent = `${newValue} / ${category.goal} ${category.unit}`;
                 }
@@ -605,7 +931,6 @@
                     progressBar.style.width = `${percentage}%`;
                 }
 
-                // Show/hide check icon
                 if (isComplete && !checkIcon) {
                     const iconContainer = card.querySelector('.flex.justify-between.items-start.mb-2 .flex-1').nextElementSibling;
                     if (iconContainer && !iconContainer.classList.contains('text-green-400')) {
@@ -620,7 +945,6 @@
                     checkIcon.remove();
                 }
 
-                // Update overall progress
                 this.updateOverallProgress();
             }
 
@@ -700,15 +1024,23 @@
             renderCategoryCard(category, currentProgress) {
                 const percentage = Math.min((currentProgress / category.goal) * 100, 100);
                 const isComplete = currentProgress >= category.goal;
+                const hasReminders = category.reminders && category.reminders.length > 0;
                 
                 return `
                     <div class="glass-card rounded-xl p-3">
                         <div class="flex justify-between items-start mb-2">
                             <div class="flex-1 min-w-0">
-                                ${category.link ? 
-                                    `<a href="${category.link}" target="_blank" class="text-white font-bold text-base hover:underline truncate block">${category.name}</a>` :
-                                    `<h3 class="text-white font-bold text-base truncate">${category.name}</h3>`
-                                }
+                                <div class="flex items-center gap-2">
+                                    ${category.link ? 
+                                        `<a href="${category.link}" target="_blank" class="text-white font-bold text-base hover:underline truncate block">${category.name}</a>` :
+                                        `<h3 class="text-white font-bold text-base truncate">${category.name}</h3>`
+                                    }
+                                    ${hasReminders ? `
+                                        <span class="reminder-badge">
+                                            🔔 ${category.reminders.length}
+                                        </span>
+                                    ` : ''}
+                                </div>
                                 <p class="text-white opacity-75 text-xs">Goal: ${category.goal} ${category.unit}</p>
                             </div>
                             ${isComplete ? `
@@ -772,6 +1104,13 @@
                                 </button>
                             </div>
                         </div>
+                        
+                        <!-- Reminder Times (if any) -->
+                        ${hasReminders ? `
+                            <div class="mt-2 text-white text-xs opacity-75">
+                                🔔 ${category.reminders.join(', ')}
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             }
@@ -798,7 +1137,6 @@
                     this.renderPage('dashboard');
                 });
 
-                // Increment +1
                 document.querySelectorAll('.increment-1').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const categoryId = parseInt(e.target.dataset.categoryId);
@@ -809,7 +1147,6 @@
                     });
                 });
 
-                // Increment +5
                 document.querySelectorAll('.increment-5').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const categoryId = parseInt(e.target.dataset.categoryId);
@@ -820,7 +1157,6 @@
                     });
                 });
 
-                // Decrement -1
                 document.querySelectorAll('.decrement-1').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const categoryId = parseInt(e.target.dataset.categoryId);
@@ -831,7 +1167,6 @@
                     });
                 });
 
-                // Decrement -5
                 document.querySelectorAll('.decrement-5').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const categoryId = parseInt(e.target.dataset.categoryId);
@@ -842,7 +1177,6 @@
                     });
                 });
 
-                // Show custom input
                 document.querySelectorAll('.set-custom').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const categoryId = parseInt(e.target.dataset.categoryId);
@@ -853,7 +1187,6 @@
                     });
                 });
 
-                // Apply custom value
                 document.querySelectorAll('.apply-custom').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const categoryId = parseInt(e.target.dataset.categoryId);
@@ -863,13 +1196,11 @@
                         if (!isNaN(value) && value >= 0) {
                             this.updateCategoryValue(categoryId, value);
                             
-                            // Hide custom input
                             const container = document.getElementById(`custom-input-${categoryId}`);
                             if (container) {
                                 container.classList.add('hidden');
                             }
                             
-                            // Clear input
                             input.value = '';
                         } else {
                             alert('Please enter a valid number');
@@ -877,7 +1208,6 @@
                     });
                 });
 
-                // Cancel custom input
                 document.querySelectorAll('.cancel-custom').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const categoryId = parseInt(e.target.dataset.categoryId);
@@ -885,14 +1215,12 @@
                         if (container) {
                             container.classList.add('hidden');
                             
-                            // Clear input
                             const input = document.querySelector(`.custom-value-input[data-category-id="${categoryId}"]`);
                             if (input) input.value = '';
                         }
                     });
                 });
 
-                // Reset progress
                 document.querySelectorAll('.reset-progress').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const categoryId = parseInt(e.currentTarget.dataset.categoryId);
@@ -1293,7 +1621,7 @@
                                 </div>
 
                                 <div>
-                                    <label class="text-white text-xs mb-1 block">Reminders</label>
+                                    <label class="text-white text-xs mb-1 block">Reminders (24h format)</label>
                                     <div id="remindersList" class="space-y-2 mb-2">
                                         ${reminders.map((time, index) => `
                                             <div class="flex gap-1">
@@ -1310,6 +1638,7 @@
                                     <button id="addReminderBtn" class="glass-button px-3 py-2 rounded-lg text-white text-xs w-full">
                                         + Add Reminder
                                     </button>
+                                    <p class="text-white text-[10px] opacity-50 mt-1">Reminders check every 30 seconds, beeps 3 times</p>
                                 </div>
 
                                 <div class="flex gap-2 pt-3">
@@ -1567,37 +1896,22 @@
         }
 
         // ============================================
-        // SERVICE WORKER
-        // ============================================
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                const swCode = `
-                    self.addEventListener('install', (e) => { self.skipWaiting(); });
-                    self.addEventListener('activate', (e) => { return self.clients.claim(); });
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(caches.match(e.request).then(response => response || fetch(e.request)));
-                    });
-                `;
-
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-
-                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW failed:', err));
-            });
-        }
-
-        // ============================================
         // APP INITIALIZATION
         // ============================================
         const dataHandler = new DataHandler();
-        const notificationSystem = new NotificationSystem();
+        const notificationSystem = new NotificationSystem(dataHandler);
         const uiRenderer = new UIRenderer(dataHandler, notificationSystem);
         const exportManager = new ExportManager(dataHandler);
 
         window.uiRenderer = uiRenderer;
+        window.testReminder = () => notificationSystem.testReminder();
 
         document.addEventListener('DOMContentLoaded', () => {
             uiRenderer.init();
+            
+            // Preload audio
+            const audio = document.getElementById('reminderSound');
+            audio.load();
         });
     </script>
 </body>
