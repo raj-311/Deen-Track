@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <meta name="theme-color" content="#6366f1">
-    <title>Islamic Routine Report</title>
+    <title>Islamic Routine - Increment/Decrement</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,25 +29,25 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             transition: background-color 0.3s ease;
+            overflow-x: hidden;
+            width: 100%;
         }
 
-        /* Light Mode */
         .light-mode {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        /* Dark Mode */
         .dark-mode {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
         }
 
-        /* Glassmorphism Cards */
         .glass-card {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             transition: all 0.3s ease;
+            width: 100%;
         }
 
         .dark-mode .glass-card {
@@ -55,14 +55,8 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .glass-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.45);
-        }
-
-        /* Progress Bar */
         .progress-bar {
-            height: 8px;
+            height: 6px;
             background: rgba(255, 255, 255, 0.2);
             border-radius: 999px;
             overflow: hidden;
@@ -75,12 +69,13 @@
             border-radius: 999px;
         }
 
-        /* Input Styles */
         .glass-input {
             background: rgba(255, 255, 255, 0.15);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
             backdrop-filter: blur(10px);
+            font-size: 16px;
+            width: 100%;
         }
 
         .glass-input::placeholder {
@@ -91,37 +86,32 @@
             background: rgba(255, 255, 255, 0.08);
         }
 
-        /* Button Styles */
         .glass-button {
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(10px);
             transition: all 0.3s ease;
             color: white;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .glass-button:hover {
             background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.02);
         }
 
         .glass-button:active {
-            transform: scale(0.98);
+            transform: scale(0.97);
         }
 
-        /* Bottom Navigation */
         .bottom-nav {
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(20px);
             border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: env(safe-area-inset-bottom, 0);
         }
 
         .dark-mode .bottom-nav {
             background: rgba(255, 255, 255, 0.08);
-        }
-
-        .nav-item {
-            transition: all 0.3s ease;
         }
 
         .nav-item.active {
@@ -129,25 +119,40 @@
             opacity: 1 !important;
         }
 
-        /* Modal */
         .modal-backdrop {
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px);
+            padding: 12px;
         }
 
-        /* Animations */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .fade-in {
-            animation: fadeIn 0.5s ease;
+            animation: fadeIn 0.3s ease;
         }
 
-        /* Custom Scrollbar */
+        .update-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(16, 185, 129, 0.9);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 4px;
         }
 
         ::-webkit-scrollbar-track {
@@ -159,11 +164,6 @@
             border-radius: 4px;
         }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        /* Hide number input arrows */
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button {
             -webkit-appearance: none;
@@ -174,38 +174,57 @@
             -moz-appearance: textfield;
         }
 
-        /* Chart Container */
         .chart-container {
             position: relative;
-            height: 300px;
+            height: 220px;
+            width: 100%;
         }
 
-        /* Notification Badge */
-        .notification-badge {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background: #ef4444;
-            color: white;
-            border-radius: 999px;
-            font-size: 10px;
-            padding: 2px 6px;
+        button, .nav-item {
+            touch-action: manipulation;
+        }
+
+        #contentArea {
+            max-width: 100%;
+            overflow-x: hidden;
+            padding: 12px;
+        }
+
+        input[type="date"] {
+            min-height: 44px;
+        }
+
+        .value-display {
+            font-size: 20px;
             font-weight: bold;
+            color: white;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 4px 8px;
+            min-width: 60px;
+        }
+
+        .increment-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            margin-top: 8px;
         }
     </style>
 </head>
 <body class="light-mode">
     <!-- Main Container -->
-    <div id="app" class="min-h-screen pb-20">
+    <div id="app" class="min-h-screen pb-24">
         <!-- Header -->
-        <header class="glass-card rounded-none p-4 sticky top-0 z-40">
-            <div class="max-w-md mx-auto flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-white">Islamic Routine</h1>
+        <header class="glass-card rounded-none p-3 sticky top-0 z-40">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl font-bold text-white">Islamic Routine</h1>
                 <button id="themeToggle" class="glass-button p-2 rounded-full text-white">
-                    <svg id="sunIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg id="sunIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
                     </svg>
-                    <svg id="moonIcon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg id="moonIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                     </svg>
                 </button>
@@ -213,31 +232,31 @@
         </header>
 
         <!-- Content Container -->
-        <main class="max-w-md mx-auto p-4" id="contentArea">
+        <main class="px-3" id="contentArea">
             <!-- Pages will be injected here -->
         </main>
 
         <!-- Bottom Navigation -->
         <nav class="bottom-nav fixed bottom-0 left-0 right-0 z-50">
-            <div class="max-w-md mx-auto flex justify-around items-center p-3">
-                <button class="nav-item active flex flex-col items-center gap-1 text-white" data-page="dashboard">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex justify-around items-center p-2">
+                <button class="nav-item active flex flex-col items-center gap-0.5 text-white p-1" data-page="dashboard">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                     </svg>
-                    <span class="text-xs">Dashboard</span>
+                    <span class="text-[10px]">Dashboard</span>
                 </button>
-                <button class="nav-item flex flex-col items-center gap-1 text-white opacity-60" data-page="analytics">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button class="nav-item flex flex-col items-center gap-0.5 text-white opacity-60 p-1" data-page="analytics">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
-                    <span class="text-xs">Analytics</span>
+                    <span class="text-[10px]">Analytics</span>
                 </button>
-                <button class="nav-item flex flex-col items-center gap-1 text-white opacity-60" data-page="manage">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button class="nav-item flex flex-col items-center gap-0.5 text-white opacity-60 p-1" data-page="manage">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
-                    <span class="text-xs">Manage</span>
+                    <span class="text-[10px]">Manage</span>
                 </button>
             </div>
         </nav>
@@ -246,9 +265,12 @@
     <!-- Modal Container -->
     <div id="modalContainer"></div>
 
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
     <script>
         // ============================================
-        // DATA HANDLER - Storage Logic
+        // DATA HANDLER
         // ============================================
         class DataHandler {
             constructor() {
@@ -353,7 +375,7 @@
         }
 
         // ============================================
-        // NOTIFICATION SYSTEM - Alarms & Alerts
+        // NOTIFICATION SYSTEM
         // ============================================
         class NotificationSystem {
             constructor() {
@@ -438,7 +460,7 @@
         }
 
         // ============================================
-        // UI RENDERER - DOM Manipulation
+        // UI RENDERER - With Increment/Decrement Buttons
         // ============================================
         class UIRenderer {
             constructor(dataHandler, notificationSystem) {
@@ -475,7 +497,6 @@
             }
 
             setupEventListeners() {
-                // Theme toggle
                 document.getElementById('themeToggle').addEventListener('click', () => {
                     const currentTheme = this.dataHandler.getTheme();
                     const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -484,7 +505,6 @@
                     this.updateThemeIcon(newTheme);
                 });
 
-                // Navigation
                 document.querySelectorAll('.nav-item').forEach(item => {
                     item.addEventListener('click', (e) => {
                         const page = e.currentTarget.dataset.page;
@@ -496,7 +516,6 @@
             navigateTo(page) {
                 this.currentPage = page;
                 
-                // Update nav items
                 document.querySelectorAll('.nav-item').forEach(item => {
                     if (item.dataset.page === page) {
                         item.classList.add('active');
@@ -526,24 +545,120 @@
                 }
             }
 
+            showNotification(message) {
+                const container = document.getElementById('notificationContainer');
+                const notification = document.createElement('div');
+                notification.className = 'update-notification';
+                notification.textContent = message;
+                container.innerHTML = '';
+                container.appendChild(notification);
+                
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 1500);
+            }
+
+            updateCategoryValue(categoryId, newValue) {
+                // Save to storage
+                this.dataHandler.saveProgress(this.currentDate, categoryId, newValue);
+                
+                // Update UI
+                this.updateCategoryCard(categoryId, newValue);
+                
+                // Show notification
+                this.showNotification(`Updated: ${newValue}`);
+            }
+
+            updateCategoryCard(categoryId, newValue) {
+                const card = document.querySelector(`[data-category-id="${categoryId}"]`).closest('.glass-card');
+                if (!card) return;
+
+                const valueDisplay = card.querySelector('.value-display');
+                const progressBar = card.querySelector('.progress-fill');
+                const progressText = card.querySelector('.flex.justify-between.text-white.text-xs span:first-child');
+                const percentageText = card.querySelector('.flex.justify-between.text-white.text-xs span:last-child');
+                const checkIcon = card.querySelector('.text-green-400');
+                
+                const category = this.dataHandler.getCategories().find(c => c.id === categoryId);
+                if (!category) return;
+
+                const percentage = Math.min((newValue / category.goal) * 100, 100);
+                const isComplete = newValue >= category.goal;
+
+                // Update value display
+                if (valueDisplay) {
+                    valueDisplay.textContent = newValue;
+                }
+
+                // Update progress text
+                if (progressText) {
+                    progressText.textContent = `${newValue} / ${category.goal} ${category.unit}`;
+                }
+                
+                if (percentageText) {
+                    percentageText.textContent = `${Math.round(percentage)}%`;
+                }
+                
+                if (progressBar) {
+                    progressBar.style.width = `${percentage}%`;
+                }
+
+                // Show/hide check icon
+                if (isComplete && !checkIcon) {
+                    const iconContainer = card.querySelector('.flex.justify-between.items-start.mb-2 .flex-1').nextElementSibling;
+                    if (iconContainer && !iconContainer.classList.contains('text-green-400')) {
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svg.setAttribute('class', 'w-6 h-6 text-green-400 flex-shrink-0');
+                        svg.setAttribute('fill', 'currentColor');
+                        svg.setAttribute('viewBox', '0 0 20 20');
+                        svg.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>';
+                        iconContainer.parentNode.insertBefore(svg, iconContainer.nextSibling);
+                    }
+                } else if (!isComplete && checkIcon) {
+                    checkIcon.remove();
+                }
+
+                // Update overall progress
+                this.updateOverallProgress();
+            }
+
+            updateOverallProgress() {
+                const categories = this.dataHandler.getCategories();
+                const progress = this.dataHandler.getProgress(this.currentDate);
+                const overall = this.calculateOverallProgress(categories, progress);
+                
+                const overallElement = document.querySelector('.text-4xl.font-bold.text-white');
+                const overallBar = document.querySelector('.progress-bar .progress-fill');
+                
+                if (overallElement) {
+                    overallElement.textContent = `${overall}%`;
+                }
+                
+                if (overallBar) {
+                    overallBar.style.width = `${overall}%`;
+                }
+            }
+
             renderDashboard(container) {
                 const categories = this.dataHandler.getCategories();
                 const progress = this.dataHandler.getProgress(this.currentDate);
                 
                 container.innerHTML = `
-                    <div class="fade-in">
+                    <div class="fade-in space-y-3">
                         <!-- Date Navigation -->
-                        <div class="glass-card rounded-2xl p-4 mb-4">
-                            <div class="flex items-center justify-between">
+                        <div class="glass-card rounded-xl p-3">
+                            <div class="flex items-center justify-between gap-1">
                                 <button id="prevDate" class="glass-button p-2 rounded-lg text-white">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                                     </svg>
                                 </button>
                                 <input type="date" id="dateSelector" value="${this.currentDate}" 
-                                    class="glass-input rounded-lg px-4 py-2 text-center text-white font-semibold">
+                                    class="glass-input rounded-lg px-2 py-2 text-center text-white font-semibold text-sm w-36">
                                 <button id="nextDate" class="glass-button p-2 rounded-lg text-white">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                     </svg>
                                 </button>
@@ -551,10 +666,10 @@
                         </div>
 
                         <!-- Overall Progress -->
-                        <div class="glass-card rounded-2xl p-6 mb-4">
+                        <div class="glass-card rounded-xl p-4">
                             <div class="text-center">
-                                <h2 class="text-white text-lg font-semibold mb-2">Today's Progress</h2>
-                                <div class="text-5xl font-bold text-white mb-2">${this.calculateOverallProgress(categories, progress)}%</div>
+                                <h2 class="text-white text-sm font-semibold mb-1">Today's Progress</h2>
+                                <div class="text-4xl font-bold text-white mb-1">${this.calculateOverallProgress(categories, progress)}%</div>
                                 <div class="progress-bar">
                                     <div class="progress-fill" style="width: ${this.calculateOverallProgress(categories, progress)}%"></div>
                                 </div>
@@ -562,15 +677,15 @@
                         </div>
 
                         <!-- Category Cards -->
-                        <div id="categoryCards" class="space-y-4">
+                        <div id="categoryCards" class="space-y-3">
                             ${categories.length === 0 ? `
-                                <div class="glass-card rounded-2xl p-8 text-center">
-                                    <svg class="w-16 h-16 mx-auto mb-4 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="glass-card rounded-xl p-5 text-center">
+                                    <svg class="w-12 h-12 mx-auto mb-3 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
                                     </svg>
-                                    <p class="text-white text-lg mb-2">No Categories Yet</p>
-                                    <p class="text-white opacity-75 mb-4">Add your first routine category to get started</p>
-                                    <button onclick="uiRenderer.navigateTo('manage')" class="glass-button px-6 py-2 rounded-lg text-white font-semibold">
+                                    <p class="text-white text-sm mb-2">No Categories Yet</p>
+                                    <p class="text-white opacity-75 text-xs mb-3">Add your first routine category</p>
+                                    <button onclick="uiRenderer.navigateTo('manage')" class="glass-button px-4 py-2 rounded-lg text-white font-semibold text-sm">
                                         Go to Manage
                                     </button>
                                 </div>
@@ -587,24 +702,29 @@
                 const isComplete = currentProgress >= category.goal;
                 
                 return `
-                    <div class="glass-card rounded-2xl p-5">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="flex-1">
+                    <div class="glass-card rounded-xl p-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1 min-w-0">
                                 ${category.link ? 
-                                    `<a href="${category.link}" target="_blank" class="text-white font-bold text-lg hover:underline">${category.name}</a>` :
-                                    `<h3 class="text-white font-bold text-lg">${category.name}</h3>`
+                                    `<a href="${category.link}" target="_blank" class="text-white font-bold text-base hover:underline truncate block">${category.name}</a>` :
+                                    `<h3 class="text-white font-bold text-base truncate">${category.name}</h3>`
                                 }
-                                <p class="text-white opacity-75 text-sm">Goal: ${category.goal} ${category.unit}</p>
+                                <p class="text-white opacity-75 text-xs">Goal: ${category.goal} ${category.unit}</p>
                             </div>
                             ${isComplete ? `
-                                <svg class="w-8 h-8 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                <svg class="w-6 h-6 text-green-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
                                 </svg>
                             ` : ''}
                         </div>
 
-                        <div class="mb-4">
-                            <div class="flex justify-between text-white text-sm mb-2">
+                        <!-- Large Value Display -->
+                        <div class="flex justify-center mb-2">
+                            <div class="value-display">${currentProgress}</div>
+                        </div>
+
+                        <div class="mb-2">
+                            <div class="flex justify-between text-white text-xs mb-1">
                                 <span>${currentProgress} / ${category.goal} ${category.unit}</span>
                                 <span>${Math.round(percentage)}%</span>
                             </div>
@@ -613,32 +733,51 @@
                             </div>
                         </div>
 
-                        <div class="flex gap-2">
-                            <input type="number" 
-                                class="glass-input rounded-lg px-3 py-2 flex-1 text-white" 
-                                placeholder="Enter ${category.unit}"
-                                value="${currentProgress || ''}"
-                                data-category-id="${category.id}"
-                                id="progress-${category.id}">
-                            <button class="glass-button px-4 py-2 rounded-lg text-white font-semibold update-progress" 
-                                data-category-id="${category.id}">
-                                Update
+                        <!-- Increment/Decrement Grid -->
+                        <div class="increment-grid" data-category-id="${category.id}">
+                            <button class="glass-button py-2 rounded-lg text-white font-bold decrement-1" data-category-id="${category.id}">
+                                -1
                             </button>
-                            <button class="glass-button px-4 py-2 rounded-lg text-white font-semibold reset-progress" 
-                                data-category-id="${category.id}"
-                                title="Reset Today">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                </svg>
+                            <button class="glass-button py-2 rounded-lg text-white font-bold decrement-5" data-category-id="${category.id}">
+                                -5
                             </button>
+                            <button class="glass-button py-2 rounded-lg text-white font-bold reset-progress" data-category-id="${category.id}">
+                                ⟲
+                            </button>
+                            <button class="glass-button py-2 rounded-lg text-white font-bold increment-1" data-category-id="${category.id}">
+                                +1
+                            </button>
+                            <button class="glass-button py-2 rounded-lg text-white font-bold increment-5" data-category-id="${category.id}">
+                                +5
+                            </button>
+                            <button class="glass-button py-2 rounded-lg text-white font-bold set-custom" data-category-id="${category.id}">
+                                Set
+                            </button>
+                        </div>
+
+                        <!-- Custom Input (Hidden by default) -->
+                        <div class="mt-2 hidden custom-input-container" id="custom-input-${category.id}">
+                            <div class="flex gap-1">
+                                <input type="number" 
+                                    class="glass-input rounded-lg px-2 py-1.5 flex-1 text-white text-sm custom-value-input" 
+                                    placeholder="Enter value"
+                                    data-category-id="${category.id}">
+                                <button class="glass-button px-3 py-1.5 rounded-lg text-white font-semibold text-sm apply-custom" 
+                                    data-category-id="${category.id}">
+                                    Apply
+                                </button>
+                                <button class="glass-button px-3 py-1.5 rounded-lg text-white font-semibold text-sm cancel-custom" 
+                                    data-category-id="${category.id}">
+                                    ✕
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
             }
 
             attachDashboardListeners() {
-                // Date navigation
-                document.getElementById('prevDate').addEventListener('click', () => {
+                document.getElementById('prevDate')?.addEventListener('click', () => {
                     const date = new Date(this.currentDate);
                     date.setDate(date.getDate() - 1);
                     this.currentDate = this.dataHandler.formatDate(date);
@@ -646,7 +785,7 @@
                     this.renderPage('dashboard');
                 });
 
-                document.getElementById('nextDate').addEventListener('click', () => {
+                document.getElementById('nextDate')?.addEventListener('click', () => {
                     const date = new Date(this.currentDate);
                     date.setDate(date.getDate() + 1);
                     this.currentDate = this.dataHandler.formatDate(date);
@@ -654,29 +793,111 @@
                     this.renderPage('dashboard');
                 });
 
-                document.getElementById('dateSelector').addEventListener('change', (e) => {
+                document.getElementById('dateSelector')?.addEventListener('change', (e) => {
                     this.currentDate = e.target.value;
                     this.renderPage('dashboard');
                 });
 
-                // Progress updates
-                document.querySelectorAll('.update-progress').forEach(btn => {
+                // Increment +1
+                document.querySelectorAll('.increment-1').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const categoryId = parseInt(e.target.dataset.categoryId);
-                        const input = document.getElementById(`progress-${categoryId}`);
-                        const value = parseFloat(input.value) || 0;
-                        this.dataHandler.saveProgress(this.currentDate, categoryId, value);
-                        this.renderPage('dashboard');
+                        const progress = this.dataHandler.getProgress(this.currentDate);
+                        const currentValue = progress[categoryId] || 0;
+                        const newValue = currentValue + 1;
+                        this.updateCategoryValue(categoryId, newValue);
+                    });
+                });
+
+                // Increment +5
+                document.querySelectorAll('.increment-5').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const categoryId = parseInt(e.target.dataset.categoryId);
+                        const progress = this.dataHandler.getProgress(this.currentDate);
+                        const currentValue = progress[categoryId] || 0;
+                        const newValue = currentValue + 5;
+                        this.updateCategoryValue(categoryId, newValue);
+                    });
+                });
+
+                // Decrement -1
+                document.querySelectorAll('.decrement-1').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const categoryId = parseInt(e.target.dataset.categoryId);
+                        const progress = this.dataHandler.getProgress(this.currentDate);
+                        const currentValue = progress[categoryId] || 0;
+                        const newValue = Math.max(0, currentValue - 1);
+                        this.updateCategoryValue(categoryId, newValue);
+                    });
+                });
+
+                // Decrement -5
+                document.querySelectorAll('.decrement-5').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const categoryId = parseInt(e.target.dataset.categoryId);
+                        const progress = this.dataHandler.getProgress(this.currentDate);
+                        const currentValue = progress[categoryId] || 0;
+                        const newValue = Math.max(0, currentValue - 5);
+                        this.updateCategoryValue(categoryId, newValue);
+                    });
+                });
+
+                // Show custom input
+                document.querySelectorAll('.set-custom').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const categoryId = parseInt(e.target.dataset.categoryId);
+                        const container = document.getElementById(`custom-input-${categoryId}`);
+                        if (container) {
+                            container.classList.toggle('hidden');
+                        }
+                    });
+                });
+
+                // Apply custom value
+                document.querySelectorAll('.apply-custom').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const categoryId = parseInt(e.target.dataset.categoryId);
+                        const input = document.querySelector(`.custom-value-input[data-category-id="${categoryId}"]`);
+                        const value = parseFloat(input.value);
+                        
+                        if (!isNaN(value) && value >= 0) {
+                            this.updateCategoryValue(categoryId, value);
+                            
+                            // Hide custom input
+                            const container = document.getElementById(`custom-input-${categoryId}`);
+                            if (container) {
+                                container.classList.add('hidden');
+                            }
+                            
+                            // Clear input
+                            input.value = '';
+                        } else {
+                            alert('Please enter a valid number');
+                        }
+                    });
+                });
+
+                // Cancel custom input
+                document.querySelectorAll('.cancel-custom').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const categoryId = parseInt(e.target.dataset.categoryId);
+                        const container = document.getElementById(`custom-input-${categoryId}`);
+                        if (container) {
+                            container.classList.add('hidden');
+                            
+                            // Clear input
+                            const input = document.querySelector(`.custom-value-input[data-category-id="${categoryId}"]`);
+                            if (input) input.value = '';
+                        }
                     });
                 });
 
                 // Reset progress
                 document.querySelectorAll('.reset-progress').forEach(btn => {
                     btn.addEventListener('click', (e) => {
-                        const categoryId = parseInt(e.target.closest('button').dataset.categoryId);
+                        const categoryId = parseInt(e.currentTarget.dataset.categoryId);
                         if (confirm('Reset progress for this category today?')) {
-                            this.dataHandler.resetCategoryProgress(this.currentDate, categoryId);
-                            this.renderPage('dashboard');
+                            this.updateCategoryValue(categoryId, 0);
                         }
                     });
                 });
@@ -697,26 +918,26 @@
 
             renderAnalytics(container) {
                 container.innerHTML = `
-                    <div class="fade-in space-y-4">
+                    <div class="fade-in space-y-3">
                         <!-- Period Selector -->
-                        <div class="glass-card rounded-2xl p-4">
-                            <div class="flex gap-2 mb-4">
-                                <button class="glass-button px-4 py-2 rounded-lg text-white font-semibold flex-1 period-btn active" data-period="7">
-                                    7 Days
+                        <div class="glass-card rounded-xl p-3">
+                            <div class="flex gap-1 mb-3">
+                                <button class="glass-button px-2 py-1.5 rounded-lg text-white font-semibold flex-1 text-xs period-btn active" data-period="7">
+                                    7D
                                 </button>
-                                <button class="glass-button px-4 py-2 rounded-lg text-white font-semibold flex-1 period-btn" data-period="30">
-                                    1 Month
+                                <button class="glass-button px-2 py-1.5 rounded-lg text-white font-semibold flex-1 text-xs period-btn" data-period="30">
+                                    1M
                                 </button>
-                                <button class="glass-button px-4 py-2 rounded-lg text-white font-semibold flex-1 period-btn" data-period="365">
-                                    1 Year
+                                <button class="glass-button px-2 py-1.5 rounded-lg text-white font-semibold flex-1 text-xs period-btn" data-period="365">
+                                    1Y
                                 </button>
                             </div>
-                            <div class="glass-card rounded-lg p-3">
-                                <label class="text-white text-sm mb-2 block">Custom Range</label>
-                                <div class="flex gap-2">
-                                    <input type="date" id="customStart" class="glass-input rounded-lg px-3 py-2 text-white flex-1 text-sm">
-                                    <input type="date" id="customEnd" class="glass-input rounded-lg px-3 py-2 text-white flex-1 text-sm">
-                                    <button id="applyCustomRange" class="glass-button px-4 py-2 rounded-lg text-white font-semibold">
+                            <div class="glass-card rounded-lg p-2">
+                                <label class="text-white text-xs mb-1 block">Custom Range</label>
+                                <div class="flex gap-1">
+                                    <input type="date" id="customStart" class="glass-input rounded-lg px-2 py-1.5 text-white flex-1 text-xs">
+                                    <input type="date" id="customEnd" class="glass-input rounded-lg px-2 py-1.5 text-white flex-1 text-xs">
+                                    <button id="applyCustomRange" class="glass-button px-2 py-1.5 rounded-lg text-white font-semibold text-xs">
                                         Go
                                     </button>
                                 </div>
@@ -724,42 +945,41 @@
                         </div>
 
                         <!-- Line Chart -->
-                        <div class="glass-card rounded-2xl p-4">
-                            <h3 class="text-white font-bold text-lg mb-4">Overall Progress Trend</h3>
+                        <div class="glass-card rounded-xl p-3">
+                            <h3 class="text-white font-bold text-sm mb-2">Progress Trend</h3>
                             <div class="chart-container">
                                 <canvas id="lineChart"></canvas>
                             </div>
                         </div>
 
                         <!-- Bar Chart -->
-                        <div class="glass-card rounded-2xl p-4">
-                            <h3 class="text-white font-bold text-lg mb-4">Today's Category Breakdown</h3>
+                        <div class="glass-card rounded-xl p-3">
+                            <h3 class="text-white font-bold text-sm mb-2">Today's Breakdown</h3>
                             <div class="chart-container">
                                 <canvas id="barChart"></canvas>
                             </div>
                         </div>
 
                         <!-- Stats Cards -->
-                        <div id="statsCards" class="grid grid-cols-2 gap-4">
+                        <div id="statsCards" class="grid grid-cols-2 gap-2">
                             <!-- Stats will be injected here -->
                         </div>
 
                         <!-- Export Buttons -->
-                        <div class="glass-card rounded-2xl p-4">
-                            <h3 class="text-white font-bold text-lg mb-4">Export Reports</h3>
-                            <div class="mb-4">
-                                <label class="text-white text-sm mb-2 block">Select Month</label>
-                                <input type="month" id="exportMonth" class="glass-input rounded-lg px-4 py-2 w-full text-white">
+                        <div class="glass-card rounded-xl p-3">
+                            <h3 class="text-white font-bold text-sm mb-2">Export Reports</h3>
+                            <div class="mb-2">
+                                <input type="month" id="exportMonth" class="glass-input rounded-lg px-3 py-1.5 w-full text-white text-sm">
                             </div>
                             <div class="flex gap-2">
-                                <button id="exportExcel" class="glass-button px-6 py-3 rounded-lg text-white font-semibold flex-1 flex items-center justify-center gap-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button id="exportExcel" class="glass-button px-3 py-2 rounded-lg text-white font-semibold flex-1 flex items-center justify-center gap-1 text-xs">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                     </svg>
                                     Excel
                                 </button>
-                                <button id="exportPDF" class="glass-button px-6 py-3 rounded-lg text-white font-semibold flex-1 flex items-center justify-center gap-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <button id="exportPDF" class="glass-button px-3 py-2 rounded-lg text-white font-semibold flex-1 flex items-center justify-center gap-1 text-xs">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                                     </svg>
                                     PDF
@@ -775,7 +995,6 @@
             }
 
             attachAnalyticsListeners() {
-                // Period buttons
                 document.querySelectorAll('.period-btn').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
@@ -785,8 +1004,7 @@
                     });
                 });
 
-                // Custom range
-                document.getElementById('applyCustomRange').addEventListener('click', () => {
+                document.getElementById('applyCustomRange')?.addEventListener('click', () => {
                     const start = document.getElementById('customStart').value;
                     const end = document.getElementById('customEnd').value;
                     if (start && end) {
@@ -798,18 +1016,16 @@
                     }
                 });
 
-                // Set default export month to current month
                 const now = new Date();
                 const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
                 document.getElementById('exportMonth').value = currentMonth;
 
-                // Export buttons
-                document.getElementById('exportExcel').addEventListener('click', () => {
+                document.getElementById('exportExcel')?.addEventListener('click', () => {
                     const month = document.getElementById('exportMonth').value;
                     exportManager.exportToExcel(month);
                 });
 
-                document.getElementById('exportPDF').addEventListener('click', () => {
+                document.getElementById('exportPDF')?.addEventListener('click', () => {
                     const month = document.getElementById('exportMonth').value;
                     exportManager.exportToPDF(month);
                 });
@@ -826,11 +1042,9 @@
                     return this.calculateOverallProgress(categories, progress);
                 });
 
-                // Destroy existing charts
                 if (this.charts.line) this.charts.line.destroy();
                 if (this.charts.bar) this.charts.bar.destroy();
 
-                // Line Chart
                 const lineCtx = document.getElementById('lineChart');
                 if (lineCtx) {
                     this.charts.line = new Chart(lineCtx, {
@@ -841,31 +1055,29 @@
                                 return `${date.getMonth() + 1}/${date.getDate()}`;
                             }),
                             datasets: [{
-                                label: 'Overall Progress %',
+                                label: 'Progress %',
                                 data: progressData,
                                 borderColor: 'rgba(16, 185, 129, 1)',
                                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
                                 tension: 0.4,
-                                fill: true
+                                fill: true,
+                                pointRadius: 2
                             }]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
-                                legend: {
-                                    labels: { color: 'white' }
-                                }
+                                legend: { labels: { color: 'white', font: { size: 10 } } }
                             },
                             scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 100,
-                                    ticks: { color: 'white' },
+                                y: { 
+                                    beginAtZero: true, max: 100,
+                                    ticks: { color: 'white', font: { size: 8 } },
                                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                                 },
-                                x: {
-                                    ticks: { color: 'white' },
+                                x: { 
+                                    ticks: { color: 'white', font: { size: 8 } },
                                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                                 }
                             }
@@ -873,7 +1085,6 @@
                     });
                 }
 
-                // Bar Chart - Today's Progress
                 const todayProgress = this.dataHandler.getProgress(this.currentDate);
                 const barData = categories.map(cat => {
                     const current = todayProgress[cat.id] || 0;
@@ -885,9 +1096,8 @@
                     this.charts.bar = new Chart(barCtx, {
                         type: 'bar',
                         data: {
-                            labels: categories.map(c => c.name),
+                            labels: categories.map(c => c.name.substring(0, 8) + (c.name.length > 8 ? '..' : '')),
                             datasets: [{
-                                label: 'Completion %',
                                 data: barData,
                                 backgroundColor: categories.map((_, i) => {
                                     const colors = [
@@ -905,20 +1115,15 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
-                            },
+                            plugins: { legend: { display: false } },
                             scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 100,
-                                    ticks: { color: 'white' },
+                                y: { 
+                                    beginAtZero: true, max: 100,
+                                    ticks: { color: 'white', font: { size: 8 } },
                                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                                 },
-                                x: {
-                                    ticks: { color: 'white' },
+                                x: { 
+                                    ticks: { color: 'white', font: { size: 8 } },
                                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                                 }
                             }
@@ -939,21 +1144,21 @@
                 const average = this.calculateOverallProgress(categories, todayProgress);
 
                 const statsHTML = `
-                    <div class="glass-card rounded-2xl p-4 text-center">
-                        <div class="text-4xl font-bold text-white mb-2">${categories.length}</div>
-                        <div class="text-white opacity-75 text-sm">Total Categories</div>
+                    <div class="glass-card rounded-xl p-3 text-center">
+                        <div class="text-2xl font-bold text-white mb-1">${categories.length}</div>
+                        <div class="text-white opacity-75 text-xs">Categories</div>
                     </div>
-                    <div class="glass-card rounded-2xl p-4 text-center">
-                        <div class="text-4xl font-bold text-green-400 mb-2">${completed}</div>
-                        <div class="text-white opacity-75 text-sm">Completed Today</div>
+                    <div class="glass-card rounded-xl p-3 text-center">
+                        <div class="text-2xl font-bold text-green-400 mb-1">${completed}</div>
+                        <div class="text-white opacity-75 text-xs">Completed</div>
                     </div>
-                    <div class="glass-card rounded-2xl p-4 text-center">
-                        <div class="text-4xl font-bold text-white mb-2">${average}%</div>
-                        <div class="text-white opacity-75 text-sm">Avg Progress</div>
+                    <div class="glass-card rounded-xl p-3 text-center">
+                        <div class="text-2xl font-bold text-white mb-1">${average}%</div>
+                        <div class="text-white opacity-75 text-xs">Average</div>
                     </div>
-                    <div class="glass-card rounded-2xl p-4 text-center">
-                        <div class="text-4xl font-bold text-white mb-2">${categories.length - completed}</div>
-                        <div class="text-white opacity-75 text-sm">Pending</div>
+                    <div class="glass-card rounded-xl p-3 text-center">
+                        <div class="text-2xl font-bold text-white mb-1">${categories.length - completed}</div>
+                        <div class="text-white opacity-75 text-xs">Pending</div>
                     </div>
                 `;
 
@@ -964,24 +1169,23 @@
                 const categories = this.dataHandler.getCategories();
                 
                 container.innerHTML = `
-                    <div class="fade-in space-y-4">
+                    <div class="fade-in space-y-3">
                         <!-- Add Category Button -->
-                        <button id="addCategoryBtn" class="glass-card rounded-2xl p-4 w-full flex items-center justify-center gap-2 text-white font-semibold">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button id="addCategoryBtn" class="glass-card rounded-xl p-3 w-full flex items-center justify-center gap-2 text-white font-semibold text-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
-                            Add New Category
+                            Add Category
                         </button>
 
                         <!-- Category List -->
-                        <div id="categoryList" class="space-y-4">
+                        <div id="categoryList" class="space-y-3">
                             ${categories.length === 0 ? `
-                                <div class="glass-card rounded-2xl p-8 text-center">
-                                    <svg class="w-16 h-16 mx-auto mb-4 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="glass-card rounded-xl p-5 text-center">
+                                    <svg class="w-12 h-12 mx-auto mb-3 text-white opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                     </svg>
-                                    <p class="text-white text-lg">No categories yet</p>
-                                    <p class="text-white opacity-75 text-sm mt-2">Click "Add New Category" to create your first routine</p>
+                                    <p class="text-white text-sm">No categories yet</p>
                                 </div>
                             ` : categories.map(cat => this.renderManageCategoryCard(cat)).join('')}
                         </div>
@@ -997,18 +1201,18 @@
                     : 'No reminders';
 
                 return `
-                    <div class="glass-card rounded-2xl p-5">
-                        <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <h3 class="text-white font-bold text-lg">${category.name}</h3>
-                                <p class="text-white opacity-75 text-sm">Goal: ${category.goal} ${category.unit}</p>
-                                ${category.link ? `<a href="${category.link}" target="_blank" class="text-blue-300 text-sm hover:underline break-all">${category.link}</a>` : ''}
+                    <div class="glass-card rounded-xl p-3">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-white font-bold text-sm truncate">${category.name}</h3>
+                                <p class="text-white opacity-75 text-xs">Goal: ${category.goal} ${category.unit}</p>
+                                ${category.link ? `<a href="${category.link}" target="_blank" class="text-blue-300 text-xs hover:underline block truncate">Link</a>` : ''}
                             </div>
                         </div>
 
-                        <div class="mb-4">
-                            <p class="text-white text-sm opacity-75">
-                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div class="mb-2">
+                            <p class="text-white text-xs opacity-75 truncate">
+                                <svg class="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                                 ${remindersText}
@@ -1016,11 +1220,11 @@
                         </div>
 
                         <div class="flex gap-2">
-                            <button class="glass-button px-4 py-2 rounded-lg text-white font-semibold flex-1 edit-category" 
+                            <button class="glass-button px-3 py-1.5 rounded-lg text-white font-semibold flex-1 text-xs edit-category" 
                                 data-category-id="${category.id}">
                                 Edit
                             </button>
-                            <button class="glass-button px-4 py-2 rounded-lg text-red-300 font-semibold delete-category" 
+                            <button class="glass-button px-3 py-1.5 rounded-lg text-red-300 font-semibold delete-category text-xs" 
                                 data-category-id="${category.id}">
                                 Delete
                             </button>
@@ -1030,7 +1234,7 @@
             }
 
             attachManageListeners() {
-                document.getElementById('addCategoryBtn').addEventListener('click', () => {
+                document.getElementById('addCategoryBtn')?.addEventListener('click', () => {
                     this.showCategoryModal();
                 });
 
@@ -1045,7 +1249,7 @@
                 document.querySelectorAll('.delete-category').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const categoryId = parseInt(e.target.dataset.categoryId);
-                        if (confirm('Are you sure you want to delete this category? All progress data will be kept.')) {
+                        if (confirm('Delete this category?')) {
                             this.dataHandler.deleteCategory(categoryId);
                             this.renderPage('manage');
                         }
@@ -1058,61 +1262,61 @@
                 const reminders = category?.reminders || [];
                 
                 const modalHTML = `
-                    <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div class="glass-card rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-                            <h2 class="text-white font-bold text-2xl mb-4">${isEdit ? 'Edit Category' : 'Add Category'}</h2>
+                    <div class="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-3">
+                        <div class="glass-card rounded-xl p-4 max-w-md w-full max-h-[80vh] overflow-y-auto">
+                            <h2 class="text-white font-bold text-lg mb-3">${isEdit ? 'Edit Category' : 'Add Category'}</h2>
                             
-                            <div class="space-y-4">
+                            <div class="space-y-3">
                                 <div>
-                                    <label class="text-white text-sm mb-2 block">Category Name</label>
+                                    <label class="text-white text-xs mb-1 block">Category Name</label>
                                     <input type="text" id="categoryName" value="${category?.name || ''}" 
-                                        class="glass-input rounded-lg px-4 py-2 w-full text-white" placeholder="e.g., Prayer">
+                                        class="glass-input rounded-lg px-3 py-2 w-full text-white text-sm" placeholder="e.g., Prayer">
                                 </div>
 
-                                <div class="grid grid-cols-2 gap-4">
+                                <div class="grid grid-cols-2 gap-2">
                                     <div>
-                                        <label class="text-white text-sm mb-2 block">Goal Value</label>
+                                        <label class="text-white text-xs mb-1 block">Goal</label>
                                         <input type="number" id="categoryGoal" value="${category?.goal || ''}" 
-                                            class="glass-input rounded-lg px-4 py-2 w-full text-white" placeholder="e.g., 5">
+                                            class="glass-input rounded-lg px-3 py-2 w-full text-white text-sm" placeholder="5">
                                     </div>
                                     <div>
-                                        <label class="text-white text-sm mb-2 block">Unit</label>
+                                        <label class="text-white text-xs mb-1 block">Unit</label>
                                         <input type="text" id="categoryUnit" value="${category?.unit || ''}" 
-                                            class="glass-input rounded-lg px-4 py-2 w-full text-white" placeholder="e.g., count">
+                                            class="glass-input rounded-lg px-3 py-2 w-full text-white text-sm" placeholder="count">
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label class="text-white text-sm mb-2 block">Link (Optional)</label>
+                                    <label class="text-white text-xs mb-1 block">Link (Optional)</label>
                                     <input type="url" id="categoryLink" value="${category?.link || ''}" 
-                                        class="glass-input rounded-lg px-4 py-2 w-full text-white" placeholder="https://example.com">
+                                        class="glass-input rounded-lg px-3 py-2 w-full text-white text-sm" placeholder="https://">
                                 </div>
 
                                 <div>
-                                    <label class="text-white text-sm mb-2 block">Reminders</label>
+                                    <label class="text-white text-xs mb-1 block">Reminders</label>
                                     <div id="remindersList" class="space-y-2 mb-2">
                                         ${reminders.map((time, index) => `
-                                            <div class="flex gap-2">
+                                            <div class="flex gap-1">
                                                 <input type="time" value="${time}" 
-                                                    class="glass-input rounded-lg px-4 py-2 flex-1 text-white reminder-time">
-                                                <button class="glass-button px-3 py-2 rounded-lg text-red-300 remove-reminder" data-index="${index}">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    class="glass-input rounded-lg px-3 py-2 flex-1 text-white text-sm reminder-time">
+                                                <button class="glass-button px-2 py-2 rounded-lg text-red-300 remove-reminder" data-index="${index}">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                                     </svg>
                                                 </button>
                                             </div>
                                         `).join('')}
                                     </div>
-                                    <button id="addReminderBtn" class="glass-button px-4 py-2 rounded-lg text-white text-sm w-full">
+                                    <button id="addReminderBtn" class="glass-button px-3 py-2 rounded-lg text-white text-xs w-full">
                                         + Add Reminder
                                     </button>
                                 </div>
 
-                                <div class="flex gap-2 pt-4">
-                                    <button id="saveCategoryBtn" class="glass-button px-6 py-3 rounded-lg text-white font-semibold flex-1">
-                                        ${isEdit ? 'Update' : 'Add'} Category
+                                <div class="flex gap-2 pt-3">
+                                    <button id="saveCategoryBtn" class="glass-button px-4 py-2 rounded-lg text-white font-semibold flex-1 text-sm">
+                                        ${isEdit ? 'Update' : 'Add'}
                                     </button>
-                                    <button id="cancelModalBtn" class="glass-button px-6 py-3 rounded-lg text-white font-semibold">
+                                    <button id="cancelModalBtn" class="glass-button px-4 py-2 rounded-lg text-white font-semibold text-sm">
                                         Cancel
                                     </button>
                                 </div>
@@ -1126,38 +1330,32 @@
             }
 
             attachModalListeners(category) {
-                const isEdit = category !== null;
-
-                // Add reminder
-                document.getElementById('addReminderBtn').addEventListener('click', () => {
+                document.getElementById('addReminderBtn')?.addEventListener('click', () => {
                     const remindersList = document.getElementById('remindersList');
                     const newReminder = document.createElement('div');
-                    newReminder.className = 'flex gap-2';
+                    newReminder.className = 'flex gap-1';
                     newReminder.innerHTML = `
-                        <input type="time" class="glass-input rounded-lg px-4 py-2 flex-1 text-white reminder-time">
-                        <button class="glass-button px-3 py-2 rounded-lg text-red-300 remove-reminder-new">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <input type="time" class="glass-input rounded-lg px-3 py-2 flex-1 text-white text-sm reminder-time">
+                        <button class="glass-button px-2 py-2 rounded-lg text-red-300 remove-reminder-new">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
                     `;
                     remindersList.appendChild(newReminder);
 
-                    // Attach listener to new remove button
                     newReminder.querySelector('.remove-reminder-new').addEventListener('click', (e) => {
                         e.target.closest('.flex').remove();
                     });
                 });
 
-                // Remove existing reminders
                 document.querySelectorAll('.remove-reminder').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.target.closest('.flex').remove();
                     });
                 });
 
-                // Save category
-                document.getElementById('saveCategoryBtn').addEventListener('click', () => {
+                document.getElementById('saveCategoryBtn')?.addEventListener('click', () => {
                     const name = document.getElementById('categoryName').value.trim();
                     const goal = parseFloat(document.getElementById('categoryGoal').value);
                     const unit = document.getElementById('categoryUnit').value.trim();
@@ -1167,28 +1365,24 @@
                         .filter(val => val);
 
                     if (!name || !goal || !unit) {
-                        alert('Please fill in all required fields');
+                        alert('Please fill required fields');
                         return;
                     }
 
                     const categoryData = { name, goal, unit, link, reminders };
 
-                    if (isEdit) {
+                    if (category) {
                         this.dataHandler.updateCategory(category.id, categoryData);
-                        // Cancel old reminders and set new ones
                         if (category.reminders) {
                             category.reminders.forEach(time => {
                                 this.notificationSystem.cancelReminder(category.id, time);
                             });
                         }
-                        
-                        // Schedule new reminders
                         reminders.forEach(time => {
                             this.notificationSystem.scheduleReminder(name, time, category.id);
                         });
                     } else {
                         const newCategory = this.dataHandler.addCategory(categoryData);
-                        // Schedule new reminders
                         reminders.forEach(time => {
                             this.notificationSystem.scheduleReminder(name, time, newCategory.id);
                         });
@@ -1198,13 +1392,11 @@
                     this.renderPage('manage');
                 });
 
-                // Cancel
-                document.getElementById('cancelModalBtn').addEventListener('click', () => {
+                document.getElementById('cancelModalBtn')?.addEventListener('click', () => {
                     this.closeModal();
                 });
 
-                // Close on backdrop click
-                document.querySelector('.modal-backdrop').addEventListener('click', (e) => {
+                document.querySelector('.modal-backdrop')?.addEventListener('click', (e) => {
                     if (e.target === e.currentTarget) {
                         this.closeModal();
                     }
@@ -1217,7 +1409,7 @@
         }
 
         // ============================================
-        // EXPORT MANAGER - PDF & Excel Generation
+        // EXPORT MANAGER
         // ============================================
         class ExportManager {
             constructor(dataHandler) {
@@ -1225,20 +1417,17 @@
             }
 
             getMonthData(monthString) {
-                // monthString format: "2024-03"
                 const [year, month] = monthString.split('-');
                 const startDate = new Date(year, month - 1, 1);
                 const endDate = new Date(year, month, 0);
-                
                 const dates = this.dataHandler.getDateRange(startDate, endDate);
                 const categories = this.dataHandler.getCategories();
-                
                 return { dates, categories };
             }
 
             exportToExcel(monthString) {
                 if (!monthString) {
-                    alert('Please select a month to export');
+                    alert('Please select a month');
                     return;
                 }
 
@@ -1249,10 +1438,7 @@
                     return;
                 }
 
-                // Create workbook
                 const wb = XLSX.utils.book_new();
-                
-                // Prepare data
                 const data = [
                     ['Date', ...categories.map(c => `${c.name} (${c.unit})`), ...categories.map(c => `${c.name} %`)]
                 ];
@@ -1261,13 +1447,11 @@
                     const progress = this.dataHandler.getProgress(date);
                     const row = [date];
                     
-                    // Add actual values
                     categories.forEach(cat => {
                         const value = progress[cat.id] || 0;
                         row.push(value);
                     });
                     
-                    // Add percentages
                     categories.forEach(cat => {
                         const value = progress[cat.id] || 0;
                         const percentage = Math.min((value / cat.goal) * 100, 100).toFixed(1);
@@ -1277,7 +1461,6 @@
                     data.push(row);
                 });
 
-                // Add summary row
                 const summaryRow = ['AVERAGE'];
                 categories.forEach(cat => {
                     const total = dates.reduce((sum, date) => {
@@ -1300,22 +1483,14 @@
                 
                 data.push(summaryRow);
 
-                // Create worksheet
                 const ws = XLSX.utils.aoa_to_sheet(data);
-                
-                // Add worksheet to workbook
                 XLSX.utils.book_append_sheet(wb, ws, 'Monthly Report');
-                
-                // Generate filename
-                const filename = `Islamic_Routine_${monthString}.xlsx`;
-                
-                // Download
-                XLSX.writeFile(wb, filename);
+                XLSX.writeFile(wb, `Islamic_Routine_${monthString}.xlsx`);
             }
 
             exportToPDF(monthString) {
                 if (!monthString) {
-                    alert('Please select a month to export');
+                    alert('Please select a month');
                     return;
                 }
 
@@ -1327,16 +1502,13 @@
                 }
 
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+                const doc = new jsPDF('l', 'mm', 'a4');
 
-                // Title
-                doc.setFontSize(18);
+                doc.setFontSize(16);
                 doc.text('Islamic Routine Report', 14, 15);
-                
-                doc.setFontSize(12);
-                doc.text(`Month: ${monthString}`, 14, 25);
+                doc.setFontSize(10);
+                doc.text(`Month: ${monthString}`, 14, 22);
 
-                // Prepare table data
                 const headers = [
                     ['Date', ...categories.map(c => `${c.name}\n(${c.unit})`), ...categories.map(c => `${c.name}\n%`)]
                 ];
@@ -1345,12 +1517,10 @@
                     const progress = this.dataHandler.getProgress(date);
                     const row = [date];
                     
-                    // Actual values
                     categories.forEach(cat => {
                         row.push((progress[cat.id] || 0).toString());
                     });
                     
-                    // Percentages
                     categories.forEach(cat => {
                         const value = progress[cat.id] || 0;
                         const percentage = Math.min((value / cat.goal) * 100, 100).toFixed(1);
@@ -1360,7 +1530,6 @@
                     return row;
                 });
 
-                // Summary row
                 const summaryRow = ['AVG'];
                 categories.forEach(cat => {
                     const total = dates.reduce((sum, date) => {
@@ -1383,77 +1552,37 @@
                 
                 body.push(summaryRow);
 
-                // Generate table
                 doc.autoTable({
                     head: headers,
                     body: body,
-                    startY: 30,
+                    startY: 27,
                     theme: 'grid',
-                    headStyles: {
-                        fillColor: [99, 102, 241],
-                        fontSize: 8,
-                        cellPadding: 2
-                    },
-                    bodyStyles: {
-                        fontSize: 7,
-                        cellPadding: 1.5
-                    },
-                    columnStyles: {
-                        0: { cellWidth: 25, fontStyle: 'bold' }
-                    },
-                    margin: { top: 30, left: 10, right: 10 },
-                    tableWidth: 'auto',
-                    styles: {
-                        overflow: 'linebreak',
-                        cellWidth: 'wrap'
-                    }
+                    headStyles: { fillColor: [99, 102, 241], fontSize: 7, cellPadding: 1.5 },
+                    bodyStyles: { fontSize: 6, cellPadding: 1 },
+                    margin: { top: 27, left: 10, right: 10 },
                 });
 
-                // Footer
-                const pageCount = doc.internal.getNumberOfPages();
-                for (let i = 1; i <= pageCount; i++) {
-                    doc.setPage(i);
-                    doc.setFontSize(8);
-                    doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-                    doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, doc.internal.pageSize.getHeight() - 10);
-                }
-
-                // Save
                 doc.save(`Islamic_Routine_${monthString}.pdf`);
             }
         }
 
         // ============================================
-        // SERVICE WORKER REGISTRATION (PWA)
+        // SERVICE WORKER
         // ============================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
-                    self.addEventListener('install', (e) => {
-                        console.log('Service Worker installed');
-                        self.skipWaiting();
-                    });
-
-                    self.addEventListener('activate', (e) => {
-                        console.log('Service Worker activated');
-                        return self.clients.claim();
-                    });
-
+                    self.addEventListener('install', (e) => { self.skipWaiting(); });
+                    self.addEventListener('activate', (e) => { return self.clients.claim(); });
                     self.addEventListener('fetch', (e) => {
-                        e.respondWith(
-                            caches.match(e.request).then(response => {
-                                return response || fetch(e.request);
-                            })
-                        );
+                        e.respondWith(caches.match(e.request).then(response => response || fetch(e.request)));
                     });
                 `;
 
                 const blob = new Blob([swCode], { type: 'application/javascript' });
                 const swUrl = URL.createObjectURL(blob);
 
-                navigator.serviceWorker.register(swUrl)
-                    .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.log('Service Worker registration failed:', err));
+                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW failed:', err));
             });
         }
 
@@ -1465,10 +1594,8 @@
         const uiRenderer = new UIRenderer(dataHandler, notificationSystem);
         const exportManager = new ExportManager(dataHandler);
 
-        // Make uiRenderer globally available for the "Go to Manage" button
         window.uiRenderer = uiRenderer;
 
-        // Initialize app
         document.addEventListener('DOMContentLoaded', () => {
             uiRenderer.init();
         });
