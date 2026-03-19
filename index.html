@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <meta name="theme-color" content="#6366f1">
-    <title>Self Report </title>
+    <title>Islamic Routine - Background Reminder</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -34,7 +34,7 @@
         }
 
         .light-mode {
-            background: linear-gradient(135deg, #0e3c9e 0%,#060f91 100%);
+            background: linear-gradient(135deg, #0e3c9e 0%, #060f91 100%);
         }
 
         .dark-mode {
@@ -243,7 +243,7 @@
             <div class="flex justify-between items-center">
                 <div class="flex items-center">
                     <h1 class="text-xl font-bold text-white">D̳̿͟͞E̳̿͟͞E̳̿͟͞N̳̿͟͞ T̳̿͟͞R̳̿͟͞A̳̿͟͞C̳̿͟͞K̳̿͟͞</h1>
-                   
+                                        </button>
                 </div>
                 <button id="themeToggle" class="glass-button p-2 rounded-full text-white">
                     <svg id="sunIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,7 +294,7 @@
     <div id="notificationContainer"></div>
 
     <!-- Audio Element for Beep Sound -->
-    <audio id="reminderSound" preload="auto" style="display:none">
+    <audio id="reminderSound" preload="auto" loop="false" style="display:none">
         <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGG0fPTgjMGHm7A7+OZWBYJ" type="audio/wav">
     </audio>
 
@@ -323,6 +323,11 @@
                 if (!localStorage.getItem('notificationPermission')) {
                     localStorage.setItem('notificationPermission', 'default');
                 }
+                
+                // Initialize reminders store
+                if (!localStorage.getItem('scheduledReminders')) {
+                    localStorage.setItem('scheduledReminders', JSON.stringify([]));
+                }
             }
 
             getCategories() {
@@ -331,6 +336,8 @@
 
             saveCategories(categories) {
                 localStorage.setItem('categories', JSON.stringify(categories));
+                // Update reminders in service worker
+                this.syncRemindersToServiceWorker();
             }
 
             addCategory(category) {
@@ -414,10 +421,39 @@
             setNotificationPermission(permission) {
                 localStorage.setItem('notificationPermission', permission);
             }
+            
+            syncRemindersToServiceWorker() {
+                const categories = this.getCategories();
+                const reminders = [];
+                
+                categories.forEach(category => {
+                    if (category.reminders && category.reminders.length > 0) {
+                        category.reminders.forEach(time => {
+                            reminders.push({
+                                id: `${category.id}_${time}`,
+                                categoryId: category.id,
+                                categoryName: category.name,
+                                time: time,
+                                active: true
+                            });
+                        });
+                    }
+                });
+                
+                localStorage.setItem('scheduledReminders', JSON.stringify(reminders));
+                
+                // Send to service worker if active
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'UPDATE_REMINDERS',
+                        reminders: reminders
+                    });
+                }
+            }
         }
 
         // ============================================
-        // NOTIFICATION SYSTEM - WITH MULTIPLE BEEPS
+        // NOTIFICATION SYSTEM - BACKGROUND CAPABLE
         // ============================================
         class NotificationSystem {
             constructor(dataHandler) {
@@ -428,6 +464,7 @@
                 this.sentReminders = new Set(); // Track sent reminders to avoid duplicates
                 this.beepCount = 3; // Number of beeps per reminder
                 this.beepInterval = 1000; // 1 second between beeps
+                this.backgroundSync = null;
                 this.initialize();
                 
                 // Store reference for service worker communication
@@ -438,13 +475,25 @@
                 await this.initializeNotifications();
                 this.startReminderChecker();
                 this.updatePermissionButton();
+                this.setupBackgroundSync();
                 
                 // Listen for messages from service worker
                 if (navigator.serviceWorker) {
                     navigator.serviceWorker.addEventListener('message', (event) => {
-                        if (event.data.type === 'REMINDER') {
-                            this.handleReminder(event.data.categoryName, event.data.time);
+                        if (event.data.type === 'REMINDER_FIRED') {
+                            this.handleReminder(event.data.categoryName, event.data.time, true);
                         }
+                    });
+                }
+            }
+
+            setupBackgroundSync() {
+                // Register periodic background sync if supported
+                if ('serviceWorker' in navigator && 'PeriodicSyncManager' in window) {
+                    navigator.serviceWorker.ready.then(registration => {
+                        registration.periodicSync.register('reminder-sync', {
+                            minInterval: 30 * 1000 // 30 seconds
+                        }).catch(e => console.log('Periodic sync not supported:', e));
                     });
                 }
             }
@@ -462,6 +511,13 @@
                 } else if ('Notification' in window) {
                     const permission = Notification.permission;
                     this.dataHandler.setNotificationPermission(permission);
+                    
+                    // If not granted, we'll ask when user clicks the button
+                }
+                
+                // Also check if we're in a PWA/mobile app
+                if (window.matchMedia('(display-mode: standalone)').matches) {
+                    console.log('Running as standalone PWA');
                 }
             }
 
@@ -509,13 +565,13 @@
             }
 
             startReminderChecker() {
-                // Check every 30 seconds for reminders (more frequent)
+                // Check every 15 seconds for reminders (more frequent for better accuracy)
                 this.checkInterval = setInterval(() => {
                     this.checkReminders();
-                }, 30000); // 30 seconds
+                }, 15000); // 15 seconds
                 
                 // Also check immediately
-                setTimeout(() => this.checkReminders(), 2000);
+                setTimeout(() => this.checkReminders(), 1000);
             }
 
             checkReminders() {
@@ -533,7 +589,7 @@
                                 
                                 // Check if we already sent this reminder today
                                 if (!this.sentReminders.has(reminderKey)) {
-                                    this.handleReminder(category.name, time);
+                                    this.handleReminder(category.name, time, false);
                                     this.sentReminders.add(reminderKey);
                                     
                                     // Clear from set after 24 hours
@@ -547,43 +603,63 @@
                 });
             }
 
-            handleReminder(categoryName, time) {
+            handleReminder(categoryName, time, fromBackground = false) {
                 const message = `Time for ${categoryName} (${time})`;
-                
-                // Send to service worker for background execution
-                this.sendToServiceWorker(categoryName, time);
                 
                 // Show notification
                 this.sendBrowserNotification('Islamic Routine Reminder', message);
                 
-                // Play multiple beeps
-                this.playMultipleBeeps();
+                // Play multiple beeps (even in background)
+                this.playMultipleBeeps(fromBackground);
                 
                 // Show in-app notification
                 this.showInAppNotification(`🔔 ${message}`, 'reminder');
+                
+                // Also trigger vibration for mobile
+                if (navigator.vibrate) {
+                    navigator.vibrate([200, 100, 200, 100, 200]);
+                }
             }
 
-            playMultipleBeeps() {
+            playMultipleBeeps(fromBackground = false) {
                 let beepCount = 0;
                 
                 const playBeep = () => {
                     if (beepCount < this.beepCount) {
                         try {
-                            this.notificationSound.currentTime = 0;
-                            this.notificationSound.play().catch(e => {
-                                console.log('Audio play failed:', e);
-                                // Fallback: use Web Audio API
+                            // Try to play audio
+                            if (this.notificationSound) {
+                                this.notificationSound.currentTime = 0;
+                                const playPromise = this.notificationSound.play();
+                                
+                                if (playPromise !== undefined) {
+                                    playPromise.catch(e => {
+                                        console.log('Audio play failed:', e);
+                                        this.playFallbackBeep();
+                                    });
+                                }
+                            } else {
                                 this.playFallbackBeep();
-                            });
+                            }
                         } catch (e) {
                             this.playFallbackBeep();
                         }
+                        
                         beepCount++;
                         setTimeout(playBeep, this.beepInterval);
                     }
                 };
                 
                 playBeep();
+                
+                // Also try to play via service worker for background
+                if (fromBackground && navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'PLAY_BEEPS',
+                        count: this.beepCount,
+                        interval: this.beepInterval
+                    });
+                }
             }
 
             playFallbackBeep() {
@@ -605,19 +681,8 @@
                 }
             }
 
-            sendToServiceWorker(categoryName, time) {
-                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                    navigator.serviceWorker.controller.postMessage({
-                        type: 'PLAY_REMINDER',
-                        categoryName: categoryName,
-                        time: time,
-                        beepCount: this.beepCount,
-                        beepInterval: this.beepInterval
-                    });
-                }
-            }
-
             sendBrowserNotification(title, body) {
+                // Always try to send notification
                 if ('Notification' in window && Notification.permission === 'granted') {
                     try {
                         const notification = new Notification(title, {
@@ -627,17 +692,29 @@
                             tag: 'islamic-reminder',
                             renotify: true,
                             silent: false,
-                            vibrate: [200, 100, 200, 100, 200] // Vibrate pattern for mobile
+                            vibrate: [200, 100, 200, 100, 200], // Vibrate pattern for mobile
+                            requireInteraction: true // Keep notification until user interacts
                         });
                         
                         notification.onclick = () => {
                             window.focus();
                             notification.close();
                         };
+                        
+                        // Auto close after 10 seconds
+                        setTimeout(() => notification.close(), 10000);
                     } catch (e) {
                         console.error('Notification error:', e);
-                        this.playMultipleBeeps();
                     }
+                }
+                
+                // Also try to send via service worker
+                if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'SHOW_NOTIFICATION',
+                        title: title,
+                        body: body
+                    });
                 }
             }
 
@@ -668,31 +745,21 @@
                 console.log(`Reminder set for ${categoryName} at ${time}`);
                 this.showInAppNotification(`Reminder set for ${categoryName} at ${time}`, 'success');
                 
-                // Store in localStorage for service worker
-                const reminders = JSON.parse(localStorage.getItem('scheduledReminders') || '[]');
-                reminders.push({
-                    id: `${categoryId}_${time}`,
-                    categoryName: categoryName,
-                    time: time,
-                    categoryId: categoryId,
-                    active: true
-                });
-                localStorage.setItem('scheduledReminders', JSON.stringify(reminders));
+                // Update data handler
+                this.dataHandler.syncRemindersToServiceWorker();
             }
 
             async cancelReminder(categoryId, time) {
                 console.log(`Reminder cancelled for category ${categoryId} at ${time}`);
                 
-                // Remove from localStorage
-                const reminders = JSON.parse(localStorage.getItem('scheduledReminders') || '[]');
-                const filtered = reminders.filter(r => r.id !== `${categoryId}_${time}`);
-                localStorage.setItem('scheduledReminders', JSON.stringify(filtered));
+                // Update data handler
+                this.dataHandler.syncRemindersToServiceWorker();
             }
 
             testReminder() {
                 const now = new Date();
                 const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                this.handleReminder('Test', timeStr);
+                this.handleReminder('Test', timeStr, false);
             }
         }
 
@@ -703,6 +770,9 @@
             window.addEventListener('load', () => {
                 const swCode = `
                     // Service Worker for background reminders
+                    let scheduledReminders = [];
+                    let audioContext = null;
+                    
                     self.addEventListener('install', (e) => { 
                         console.log('Service Worker installed');
                         self.skipWaiting(); 
@@ -710,7 +780,10 @@
                     
                     self.addEventListener('activate', (e) => { 
                         console.log('Service Worker activated');
-                        return self.clients.claim(); 
+                        e.waitUntil(clients.claim());
+                        
+                        // Start background check
+                        e.waitUntil(startBackgroundCheck());
                     });
                     
                     self.addEventListener('fetch', (e) => {
@@ -719,50 +792,132 @@
                         );
                     });
                     
+                    self.addEventListener('message', (e) => {
+                        const data = e.data;
+                        
+                        switch(data.type) {
+                            case 'UPDATE_REMINDERS':
+                                scheduledReminders = data.reminders;
+                                console.log('Reminders updated:', scheduledReminders.length);
+                                break;
+                                
+                            case 'PLAY_BEEPS':
+                                playBackgroundBeeps(data.count, data.interval);
+                                break;
+                                
+                            case 'SHOW_NOTIFICATION':
+                                showBackgroundNotification(data.title, data.body);
+                                break;
+                        }
+                    });
+                    
+                    async function startBackgroundCheck() {
+                        // Check every 10 seconds
+                        setInterval(() => {
+                            checkReminders();
+                        }, 10000);
+                    }
+                    
+                    function checkReminders() {
+                        const now = new Date();
+                        const currentTime = \`\${String(now.getHours()).padStart(2, '0')}:\${String(now.getMinutes()).padStart(2, '0')}\`;
+                        const today = \`\${now.getFullYear()}-\${String(now.getMonth() + 1).padStart(2, '0')}-\${String(now.getDate()).padStart(2, '0')}\`;
+                        
+                        scheduledReminders.forEach(reminder => {
+                            if (reminder.time === currentTime && reminder.active) {
+                                const reminderKey = \`\${reminder.id}_\${today}\`;
+                                
+                                // Check if we already sent this reminder
+                                if (!self.sentReminders) self.sentReminders = new Set();
+                                
+                                if (!self.sentReminders.has(reminderKey)) {
+                                    // Fire reminder
+                                    fireReminder(reminder.categoryName, reminder.time);
+                                    self.sentReminders.add(reminderKey);
+                                    
+                                    // Clear after 24 hours
+                                    setTimeout(() => {
+                                        self.sentReminders.delete(reminderKey);
+                                    }, 24 * 60 * 60 * 1000);
+                                }
+                            }
+                        });
+                    }
+                    
+                    function fireReminder(categoryName, time) {
+                        // Show notification
+                        showBackgroundNotification('Islamic Routine Reminder', \`Time for \${categoryName} (\${time})\`);
+                        
+                        // Play beeps
+                        playBackgroundBeeps(3, 1000);
+                        
+                        // Notify clients
+                        clients.matchAll().then(clients => {
+                            clients.forEach(client => {
+                                client.postMessage({
+                                    type: 'REMINDER_FIRED',
+                                    categoryName: categoryName,
+                                    time: time
+                                });
+                            });
+                        });
+                    }
+                    
+                    function showBackgroundNotification(title, body) {
+                        self.registration.showNotification(title, {
+                            body: body,
+                            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%2310b981"/></svg>',
+                            badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%2310b981"/></svg>',
+                            vibrate: [200, 100, 200, 100, 200],
+                            tag: 'islamic-reminder',
+                            renotify: true,
+                            requireInteraction: true,
+                            silent: false
+                        });
+                    }
+                    
+                    function playBackgroundBeeps(count, interval) {
+                        // Try to play beeps in background using Web Audio API
+                        try {
+                            if (!audioContext) {
+                                audioContext = new AudioContext();
+                            }
+                            
+                            let beepCount = 0;
+                            
+                            function playBeep() {
+                                if (beepCount < count) {
+                                    const oscillator = audioContext.createOscillator();
+                                    const gainNode = audioContext.createGain();
+                                    
+                                    oscillator.connect(gainNode);
+                                    gainNode.connect(audioContext.destination);
+                                    
+                                    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+                                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                                    
+                                    oscillator.start();
+                                    oscillator.stop(audioContext.currentTime + 0.2);
+                                    
+                                    beepCount++;
+                                    setTimeout(playBeep, interval);
+                                }
+                            }
+                            
+                            if (audioContext.state === 'suspended') {
+                                audioContext.resume().then(playBeep);
+                            } else {
+                                playBeep();
+                            }
+                        } catch (e) {
+                            console.log('Background audio failed:', e);
+                        }
+                    }
+                    
                     self.addEventListener('notificationclick', (e) => {
                         e.notification.close();
                         e.waitUntil(clients.openWindow('/'));
                     });
-                    
-                    self.addEventListener('message', (e) => {
-                        if (e.data.type === 'PLAY_REMINDER') {
-                            // Play beeps in background
-                            self.registration.showNotification('Islamic Routine Reminder', {
-                                body: \`Time for \${e.data.categoryName} (\${e.data.time})\`,
-                                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%2310b981"/></svg>',
-                                badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%2310b981"/></svg>',
-                                vibrate: [200, 100, 200, 100, 200],
-                                tag: 'islamic-reminder',
-                                renotify: true,
-                                silent: false,
-                                requireInteraction: true
-                            });
-                            
-                            // Also try to play audio in background (if possible)
-                            try {
-                                const audioCtx = new AudioContext();
-                                const oscillator = audioCtx.createOscillator();
-                                const gainNode = audioCtx.createGain();
-                                
-                                oscillator.connect(gainNode);
-                                gainNode.connect(audioCtx.destination);
-                                
-                                oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-                                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                                
-                                oscillator.start();
-                                oscillator.stop(audioCtx.currentTime + 0.2);
-                            } catch (e) {
-                                console.log('Background audio failed:', e);
-                            }
-                        }
-                    });
-                    
-                    // Periodic check for reminders (every minute)
-                    self.setInterval(() => {
-                        // This is a simplified version - in production, you'd sync with IndexedDB
-                        console.log('Background check for reminders');
-                    }, 60000);
                 `;
 
                 const blob = new Blob([swCode], { type: 'application/javascript' });
@@ -775,12 +930,22 @@
                         // Listen for messages from service worker
                         navigator.serviceWorker.addEventListener('message', (event) => {
                             if (window.notificationSystem) {
-                                window.notificationSystem.showInAppNotification(
-                                    `Background: ${event.data.message}`, 
-                                    'reminder'
-                                );
+                                // Handle messages from service worker
+                                if (event.data.type === 'REMINDER_FIRED') {
+                                    window.notificationSystem.showInAppNotification(
+                                        `🔔 ${event.data.categoryName} at ${event.data.time}`,
+                                        'reminder'
+                                    );
+                                }
                             }
                         });
+                        
+                        // Sync initial reminders
+                        setTimeout(() => {
+                            if (dataHandler) {
+                                dataHandler.syncRemindersToServiceWorker();
+                            }
+                        }, 2000);
                     })
                     .catch(err => console.log('SW failed:', err));
             });
@@ -1636,7 +1801,7 @@
                                     <button id="addReminderBtn" class="glass-button px-3 py-2 rounded-lg text-white text-xs w-full">
                                         + Add Reminder
                                     </button>
-                                    <p class="text-white text-[10px] opacity-50 mt-1">Reminders check every 30 seconds, beeps 3 times</p>
+                                    <p class="text-white text-[10px] opacity-50 mt-1">⏰ Works even when app is closed!</p>
                                 </div>
 
                                 <div class="flex gap-2 pt-3">
@@ -1910,6 +2075,19 @@
             // Preload audio
             const audio = document.getElementById('reminderSound');
             audio.load();
+            
+            // Sync reminders to service worker
+            setTimeout(() => {
+                dataHandler.syncRemindersToServiceWorker();
+            }, 3000);
+        });
+        
+        // Handle visibility change - when app comes back to foreground
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                // App is now visible, check reminders
+                notificationSystem.checkReminders();
+            }
         });
     </script>
 </body>
