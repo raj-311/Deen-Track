@@ -97,6 +97,7 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(10px);
             transition: all 0.3s ease;
+            color: white;
         }
 
         .glass-button:hover {
@@ -125,6 +126,7 @@
 
         .nav-item.active {
             color: #10b981;
+            opacity: 1 !important;
         }
 
         /* Modal */
@@ -604,7 +606,7 @@
                         <div class="mb-4">
                             <div class="flex justify-between text-white text-sm mb-2">
                                 <span>${currentProgress} / ${category.goal} ${category.unit}</span>
-                                <span>${percentage.toFixed(0)}%</span>
+                                <span>${Math.round(percentage)}%</span>
                             </div>
                             <div class="progress-bar">
                                 <div class="progress-fill" style="width: ${percentage}%"></div>
@@ -671,7 +673,7 @@
                 // Reset progress
                 document.querySelectorAll('.reset-progress').forEach(btn => {
                     btn.addEventListener('click', (e) => {
-                        const categoryId = parseInt(e.target.dataset.categoryId);
+                        const categoryId = parseInt(e.target.closest('button').dataset.categoryId);
                         if (confirm('Reset progress for this category today?')) {
                             this.dataHandler.resetCategoryProgress(this.currentDate, categoryId);
                             this.renderPage('dashboard');
@@ -830,44 +832,46 @@
 
                 // Line Chart
                 const lineCtx = document.getElementById('lineChart');
-                this.charts.line = new Chart(lineCtx, {
-                    type: 'line',
-                    data: {
-                        labels: dates.map(d => {
-                            const date = new Date(d);
-                            return `${date.getMonth() + 1}/${date.getDate()}`;
-                        }),
-                        datasets: [{
-                            label: 'Overall Progress %',
-                            data: progressData,
-                            borderColor: 'rgba(16, 185, 129, 1)',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                labels: { color: 'white' }
-                            }
+                if (lineCtx) {
+                    this.charts.line = new Chart(lineCtx, {
+                        type: 'line',
+                        data: {
+                            labels: dates.map(d => {
+                                const date = new Date(d);
+                                return `${date.getMonth() + 1}/${date.getDate()}`;
+                            }),
+                            datasets: [{
+                                label: 'Overall Progress %',
+                                data: progressData,
+                                borderColor: 'rgba(16, 185, 129, 1)',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: { color: 'white' },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    labels: { color: 'white' }
+                                }
                             },
-                            x: {
-                                ticks: { color: 'white' },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: { color: 'white' },
+                                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                                },
+                                x: {
+                                    ticks: { color: 'white' },
+                                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                }
 
                 // Bar Chart - Today's Progress
                 const todayProgress = this.dataHandler.getProgress(this.currentDate);
@@ -877,48 +881,50 @@
                 });
 
                 const barCtx = document.getElementById('barChart');
-                this.charts.bar = new Chart(barCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: categories.map(c => c.name),
-                        datasets: [{
-                            label: 'Completion %',
-                            data: barData,
-                            backgroundColor: categories.map((_, i) => {
-                                const colors = [
-                                    'rgba(16, 185, 129, 0.8)',
-                                    'rgba(59, 130, 246, 0.8)',
-                                    'rgba(139, 92, 246, 0.8)',
-                                    'rgba(236, 72, 153, 0.8)',
-                                    'rgba(251, 146, 60, 0.8)',
-                                    'rgba(34, 197, 94, 0.8)'
-                                ];
-                                return colors[i % colors.length];
-                            })
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
+                if (barCtx) {
+                    this.charts.bar = new Chart(barCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: categories.map(c => c.name),
+                            datasets: [{
+                                label: 'Completion %',
+                                data: barData,
+                                backgroundColor: categories.map((_, i) => {
+                                    const colors = [
+                                        'rgba(16, 185, 129, 0.8)',
+                                        'rgba(59, 130, 246, 0.8)',
+                                        'rgba(139, 92, 246, 0.8)',
+                                        'rgba(236, 72, 153, 0.8)',
+                                        'rgba(251, 146, 60, 0.8)',
+                                        'rgba(34, 197, 94, 0.8)'
+                                    ];
+                                    return colors[i % colors.length];
+                                })
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                ticks: { color: 'white' },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
                             },
-                            x: {
-                                ticks: { color: 'white' },
-                                grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    ticks: { color: 'white' },
+                                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                                },
+                                x: {
+                                    ticks: { color: 'white' },
+                                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                }
             }
 
             renderStats() {
@@ -1175,15 +1181,18 @@
                                 this.notificationSystem.cancelReminder(category.id, time);
                             });
                         }
+                        
+                        // Schedule new reminders
+                        reminders.forEach(time => {
+                            this.notificationSystem.scheduleReminder(name, time, category.id);
+                        });
                     } else {
                         const newCategory = this.dataHandler.addCategory(categoryData);
-                        categoryData.id = newCategory.id;
+                        // Schedule new reminders
+                        reminders.forEach(time => {
+                            this.notificationSystem.scheduleReminder(name, time, newCategory.id);
+                        });
                     }
-
-                    // Schedule new reminders
-                    reminders.forEach(time => {
-                        this.notificationSystem.scheduleReminder(name, time, categoryData.id || category.id);
-                    });
 
                     this.closeModal();
                     this.renderPage('manage');
@@ -1455,6 +1464,9 @@
         const notificationSystem = new NotificationSystem();
         const uiRenderer = new UIRenderer(dataHandler, notificationSystem);
         const exportManager = new ExportManager(dataHandler);
+
+        // Make uiRenderer globally available for the "Go to Manage" button
+        window.uiRenderer = uiRenderer;
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', () => {
